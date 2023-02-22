@@ -1,0 +1,5 @@
+---
+# handlers file for openpgp
+- name: Kill_current_gpg_agent
+  command: gpgconf --kill gpg-agent
+  become: false

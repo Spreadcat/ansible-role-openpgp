@@ -1,0 +1,9 @@
+---
+- name: Import local key.
+  shell: "set -o pipefail && echo \"{{ local_key.content }}\" | gpg2 --import --batch"
+  args:
+    executable: /bin/bash
+  when:
+    - local_key.id not in _gpg2_list_secret_keys.stdout
+    - local_key.id not in _gpg2_list_keys.stdout
+...

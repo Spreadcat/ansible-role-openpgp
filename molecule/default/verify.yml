@@ -1,0 +1,49 @@
+---
+# Ansible playbook for verification.
+
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Include variables.
+      ansible.builtin.include_vars: ../../defaults/main.yml
+    - name: Include OS variables.
+      ansible.builtin.include_vars: "../../defaults/{{ ansible_os_family | lower }}.yml"
+    - name: Include molecule variables.
+      ansible.builtin.include_vars: "./variables.yml"
+    - name: Ensure package installation.
+      ansible.builtin.package:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ openpgp_packages }}"
+      register: _openpgp_packages
+      become: true
+      failed_when: (_openpgp_packages.changed or _openpgp_packages.failed)
+    - name: Ensure openpgp configuration file
+      ansible.builtin.stat:
+        path: "{{ openpgp_config_file_path }}"
+      register: _openpgp_configuration_file
+      failed_when: not _openpgp_configuration_file.stat.exists
+    - name: List public keys
+      command: gpg2 --list-keys
+      register: _gpg2_list_keys
+      changed_when: false
+    - name: List private keys
+      command: gpg2 --list-secret-keys
+      register: _gpg2_list_secret_keys
+      changed_when: false
+    - name: Check that public keys are present
+      assert:
+        that: public_key.id in _gpg2_list_keys.stdout
+        quiet: true
+      loop: "{{ openpgp_public_keys }}"
+      loop_control:
+        loop_var: public_key
+    - name: Check that private keys are present
+      assert:
+        that: private_key.id in _gpg2_list_secret_keys.stdout
+        quiet: true
+      loop: "{{ openpgp_local_keys }}"
+      loop_control:
+        loop_var: private_key
+

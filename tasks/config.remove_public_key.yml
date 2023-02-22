@@ -1,0 +1,6 @@
+---
+- name: Remove key from keyring.
+  command:
+    cmd: "gpg2 --batch --yes --delete-keys {{ public_key.id }}"
+  when:
+    - public_key.id in _gpg2_list_keys.stdout
